@@ -105,14 +105,14 @@ CREATE TABLE equipped (
 
 DELIMITER ;;
 
--- Function
+-- FUNCTION
 CREATE FUNCTION armor_total(char_id INT UNSIGNED)
   RETURNS INT UNSIGNED
   DETERMINISTIC
   BEGIN
-    DECLARE total_armor INT UNSIGNED;  -- Variable to hold the total armor value to return
-    DECLARE base_armor INT UNSIGNED;   -- Variable to hold the characters base defence stat
-    DECLARE equipped_armor INT UNSIGNED;  -- Variable to hold the total armor from a character's equipped items
+    DECLARE total_armor INT UNSIGNED;
+    DECLARE base_armor INT UNSIGNED;
+    DECLARE equipped_armor INT UNSIGNED;
 
     -- Selecting the character's armor stat into base_armor
     SELECT cs.armor INTO base_armor
@@ -139,6 +139,40 @@ CREATE FUNCTION armor_total(char_id INT UNSIGNED)
     END IF;
       
     RETURN total_armor;
+  END;;
+
+-- PROCEDURES
+CREATE PROCEDURE attack(IN id_of_char_attacked INT UNSIGNED, IN id_of_item_used INT UNSIGNED)
+  BEGIN
+    DECLARE total_armor INT UNSIGNED;
+    DECLARE item_damage INT UNSIGNED;
+    DECLARE dmg_after_armor INT UNSIGNED;
+    DECLARE starting_health INT UNSIGNED;
+
+    -- Getting the total armor value of the target
+    SET total_armor = armor_total(id_of_char_attacked);
+
+    -- Getting the damage of the item used to attack
+    SELECT i.damage INTO item_damage
+      FROM items i
+      WHERE i.item_id = id_of_item_used;
+
+    -- Calculating what the damage should be
+    SET dmg_after_armor = item_damage - total_armor;
+
+    -- Getting the starting health of the target
+    SELECT health INTO starting_health
+      FROM character_stats cs
+      WHERE character_id = id_of_char_attacked;
+
+    -- Either killing and dropping the target from the tables or reducing their health as appropriate
+    IF dmg_after_armor > starting_health THEN
+      DELETE from characters WHERE character_id = id_of_char_attacked;
+    ELSEIF dmg_after_armor > 0 THEN
+      UPDATE character_stats
+        SET health = starting_health - dmg_after_armor
+        WHERE character_id = id_of_char_attacked;
+    END IF;
   END;;
 
 DELIMITER ;
