@@ -2,6 +2,7 @@
 CREATE SCHEMA destruction;
 USE destruction;
 
+-- Tables
 CREATE TABLE players (
   player_id INT UNSIGNED PRIMARY KEY NOT NULL AUTO_INCREMENT,
   first_name VARCHAR(30) NOT NULL,
@@ -101,3 +102,43 @@ CREATE TABLE equipped (
     ON UPDATE CASCADE
     ON DELETE CASCADE
 );
+
+DELIMITER ;;
+
+-- Function
+CREATE FUNCTION armor_total(char_id INT UNSIGNED)
+  RETURNS INT UNSIGNED
+  DETERMINISTIC
+  BEGIN
+    DECLARE total_armor INT UNSIGNED;  -- Variable to hold the total armor value to return
+    DECLARE base_armor INT UNSIGNED;   -- Variable to hold the characters base defence stat
+    DECLARE equipped_armor INT UNSIGNED;  -- Variable to hold the total armor from a character's equipped items
+
+    -- Selecting the character's armor stat into base_armor
+    SELECT cs.armor INTO base_armor
+      FROM characters c
+        INNER JOIN character_stats cs
+          ON c.character_id = cs.character_id
+      WHERE c.character_id = char_id;
+
+    -- Selecting the sum of a character's equipped item's armor into equipped_armor
+    SELECT SUM(i.armor) INTO equipped_armor
+      FROM characters c
+        LEFT OUTER JOIN equipped e
+          ON c.character_id = e.character_id
+        LEFT OUTER JOIN items i
+          ON i.item_id = e.item_id
+      WHERE c.character_id = char_id;
+
+    -- Checking if equipped armor is at least over 0 to prevent an instance of a character not having any equipped
+    -- armor stats causing equipped_armor to equal null
+    IF equipped_armor > 0 THEN
+      SET total_armor = base_armor + equipped_armor;
+    ELSE
+      SET total_armor = base_armor;
+    END IF;
+      
+    RETURN total_armor;
+  END;;
+
+DELIMITER ;
