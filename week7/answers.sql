@@ -141,6 +141,7 @@ CREATE FUNCTION armor_total(char_id INT UNSIGNED)
     RETURN total_armor;
   END;;
 
+
 -- PROCEDURES
 CREATE PROCEDURE attack(IN id_of_char_attacked INT UNSIGNED, IN id_of_item_used INT UNSIGNED)
   BEGIN
@@ -167,12 +168,54 @@ CREATE PROCEDURE attack(IN id_of_char_attacked INT UNSIGNED, IN id_of_item_used 
 
     -- Either killing and dropping the target from the tables or reducing their health as appropriate
     IF dmg_after_armor > starting_health THEN
-      DELETE from characters WHERE character_id = id_of_char_attacked;
+      DELETE FROM characters WHERE character_id = id_of_char_attacked;
     ELSEIF dmg_after_armor > 0 THEN
       UPDATE character_stats
         SET health = starting_health - dmg_after_armor
         WHERE character_id = id_of_char_attacked;
     END IF;
+  END;;
+
+
+CREATE PROCEDURE equip(IN inven_id INT UNSIGNED)
+  BEGIN
+    DECLARE char_id INT UNSIGNED;
+    DECLARE itm_id INT UNSIGNED;
+
+    -- Grabbing character_id and item_item
+    SELECT i.character_id, i.item_id INTO char_id, itm_id
+      FROM inventory i
+      WHERE i.inventory_id = inven_id;
+
+    -- Adding item to character's equipped equipment
+    INSERT INTO equipped
+      (character_id, item_id)
+    VALUES
+      (char_id, itm_id);
+
+    -- Removing item from character's inventory
+    DELETE FROM inventory WHERE inventory_id = inven_id;
+  END;;
+
+
+CREATE PROCEDURE unequip(IN equip_id INT UNSIGNED)
+  BEGIN
+    DECLARE char_id INT UNSIGNED;
+    DECLARE itm_id INT UNSIGNED;
+
+    -- Grabbing character_id and item_item
+    SELECT e.character_id, e.item_id INTO char_id, itm_id
+      FROM equipped e
+      WHERE e.equipped_id = equip_id;
+
+    -- Adding item to character's inventory
+    INSERT INTO inventory
+      (character_id, item_id)
+    VALUES
+      (char_id, itm_id);
+
+    -- Removing item from character's equipped equipment
+    DELETE FROM equipped WHERE equipped_id = equip_id;
   END;;
 
 DELIMITER ;
