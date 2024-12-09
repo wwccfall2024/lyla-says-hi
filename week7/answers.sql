@@ -218,4 +218,46 @@ CREATE PROCEDURE unequip(IN equip_id INT UNSIGNED)
     DELETE FROM equipped WHERE equipped_id = equip_id;
   END;;
 
+
+CREATE PROCEDURE set_winners(IN winning_team_id INT UNSIGNED)
+  BEGIN
+    DECLARE char_id INT UNSIGNED;
+    DECLARE char_name VARCHAR(30);
+    DECLARE row_not_found TINYINT DEFAULT FALSE;
+
+    -- Creating cursor to hold the winning team's info
+    DECLARE winning_team_cursor CURSOR FOR
+      SELECT c.character_id, c.name
+        FROM characters c
+          LEFT OUTER JOIN team_members tm
+            ON c.character_id = tm.character_id
+          LEFT OUTER JOIN teams t
+            ON tm.team_id = t.team_id
+        WHERE t.team_id = winning_team_id;
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND
+        SET row_not_found = TRUE;
+  
+    -- Clearing table of previous winners
+    DELETE FROM winners;
+
+    -- Using cursor and loop to feed the winners into the winners table
+    OPEN winning_team_cursor;
+    winning_team_loop : LOOP
+
+      FETCH winning_team_cursor INTO char_id, char_name;
+      IF row_not_found THEN
+        LEAVE winning_team_loop;
+      END IF;
+
+      INSERT INTO winners
+        (character_id, name)
+      VALUES
+        (char_id, char_name);
+      
+    END LOOP winning_team_loop;
+    CLOSE winning_team_cursor;
+    
+  END;;
+
 DELIMITER ;
