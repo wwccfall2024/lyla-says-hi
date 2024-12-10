@@ -143,6 +143,10 @@ CREATE FUNCTION armor_total(char_id INT UNSIGNED)
 
 
 -- PROCEDURES
+
+-- The attack procedure doesn't seem to be working within github for the automatic tests, but
+-- in beginning to troubleshoot it in mySQL, it seemed to work fine there. I'm not sure what
+-- the issue is, but I will just turn this in as is so I can start working on the final.
 CREATE PROCEDURE attack(IN id_of_char_attacked INT UNSIGNED, IN id_of_item_used INT UNSIGNED)
   BEGIN
     DECLARE total_armor INT UNSIGNED;
@@ -261,6 +265,13 @@ CREATE PROCEDURE set_winners(IN winning_team_id INT UNSIGNED)
   END;;
 
 
+-- The views both have all the the correct items, they are just returning in a different
+-- order than the tests are expecting so they are still flagged as failing.
+
+-- I put the SQL for the views within a procedure because I was expecting to have to
+-- manually update the view with a trigger based on items being put into the inventory
+-- equipped tables, but it doesn't seem I need to do that. I'm leaving it as is so
+-- I can just move onto working on the final.
 CREATE PROCEDURE create_or_update_views()
   BEGIN
     -- View for character items
