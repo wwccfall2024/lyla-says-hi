@@ -2,7 +2,7 @@
 CREATE SCHEMA destruction;
 USE destruction;
 
--- Tables
+-- TABLES
 CREATE TABLE players (
   player_id INT UNSIGNED PRIMARY KEY NOT NULL AUTO_INCREMENT,
   first_name VARCHAR(30) NOT NULL,
@@ -260,4 +260,54 @@ CREATE PROCEDURE set_winners(IN winning_team_id INT UNSIGNED)
     
   END;;
 
+
+CREATE PROCEDURE create_or_update_views()
+  BEGIN
+    -- View for character items
+    CREATE OR REPLACE VIEW character_items AS
+      SELECT c.character_id AS character_id, c.name AS character_name, i.name AS item_name,
+             i.armor AS armor, i.damage AS damage
+        FROM items i
+          LEFT OUTER JOIN inventory iv
+            ON i.item_id = iv.item_id
+          INNER JOIN characters c
+            ON c.character_id = iv.character_id
+      UNION
+      SELECT c.character_id AS character_id, c.name AS character_name, i.name AS item_name,
+             i.armor AS armor, i.damage AS damage
+        FROM items i
+          LEFT OUTER JOIN equipped eq
+            ON i.item_id = eq.item_id
+          INNER JOIN characters c
+            ON c.character_id = eq.character_id;
+
+    -- View for team items
+    CREATE OR REPLACE VIEW team_items AS
+      SELECT t.team_id AS team_id, t.name AS team_name, i.name AS item_name,
+             i.armor AS armor, i.damage AS damage
+        FROM items i
+          LEFT OUTER JOIN inventory iv
+            ON i.item_id = iv.item_id
+          LEFT OUTER JOIN characters c
+            ON c.character_id = iv.character_id
+          LEFT OUTER JOIN team_members tm
+            ON tm.character_id = c.character_id
+          INNER JOIN teams t
+            ON t.team_id = tm.team_id
+      UNION
+      SELECT t.team_id AS team_id, t.name AS team_name, i.name AS item_name,
+             i.armor AS armor, i.damage AS damage
+        FROM items i
+          LEFT OUTER JOIN equipped eq
+            ON i.item_id = eq.item_id
+          LEFT OUTER JOIN characters c
+            ON c.character_id = eq.character_id
+          LEFT OUTER JOIN team_members tm
+            ON tm.character_id = c.character_id
+          INNER JOIN teams t
+            ON t.team_id = tm.team_id;
+  END;;
+
 DELIMITER ;
+
+CALL create_or_update_views();
