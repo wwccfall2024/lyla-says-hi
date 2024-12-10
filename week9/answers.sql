@@ -44,7 +44,12 @@ CREATE TABLE posts (
   user_id INT UNSIGNED NOT NULL,
   created_on TIMESTAMP NOT NULL DEFAULT NOW(),
   updated_on TIMESTAMP NOT NULL DEFAULT NOW() ON UPDATE NOW(),
-  content VARCHAR(100) NOT NULL
+  content VARCHAR(100) NOT NULL,
+  CONSTRAINT posts_fk_users
+    FOREIGN KEY (user_id)
+    REFERENCES users (user_id)
+    ON UPDATE CASCADE
+    ON DELETE CASCADE
 );
 
 CREATE TABLE notifications (
