@@ -147,4 +147,45 @@ BEGIN
   DELETE FROM sessions WHERE updated_on < DATE_SUB(NOW(), INTERVAL 2 HOUR);
 END;;
 
+-- PROCEDURES
+
+CREATE PROCEDURE add_post(IN user_id_var INT UNSIGNED, IN content_var VARCHAR(100))
+BEGIN
+  DECLARE next_friend_id INT UNSIGNED;
+  DECLARE last_post_id INT UNSIGNED;
+  DECLARE row_not_found TINYINT DEFAULT FALSE;
+
+  -- Cursor to grab user's friend's ids
+  DECLARE friend_ids_cursor CURSOR FOR
+    SELECT friend_id
+      FROM friends
+    WHERE user_id = user_id_var;
+
+  DECLARE CONTINUE HANDLER FOR NOT FOUND
+        SET row_not_found = TRUE;
+
+  INSERT INTO posts
+    (user_id, content)
+  VALUES
+    (user_id_var, content_var);
+
+  SELECT value INTO last_post_id
+    FROM meta WHERE `key` = 'last_post_id';
+
+  OPEN friend_ids_cursor;
+  friend_notification_loop : LOOP
+
+    FETCH friend_ids_cursor INTO next_friend_id;
+    IF row_not_found THEN
+      LEAVE friend_notification_loop;
+    END IF;
+
+    INSERT INTO notifications
+      (user_id, post_id)
+    VALUES
+      (next_friend_id, last_post_id);
+
+  END LOOP friend_notification_loop;
+END;;
+
 DELIMITER ;
