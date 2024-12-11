@@ -79,6 +79,18 @@ INSERT INTO meta
 VALUES
   ('last_post_id', NULL);
 
+-- VIEWS
+
+CREATE OR REPLACE VIEW notification_posts AS
+  SELECT n.user_id AS user_id, u.first_name AS first_name, u.last_name AS last_name,
+         p.post_id AS post_id, p.content AS content
+    FROM notifications n
+      LEFT OUTER JOIN users u
+        ON n.user_id = u.user_id
+      LEFT OUTER JOIN posts p
+        ON n.post_id = p.post_id
+    ORDER BY n.user_id, p.post_id;
+
 DELIMITER ;;
 
 -- TRIGGERS
