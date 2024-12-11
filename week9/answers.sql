@@ -141,10 +141,12 @@ BEGIN
       LEAVE all_users_loop;
     END IF;
 
-    INSERT INTO notifications
-      (user_id, post_id)
-    VALUES
-      (next_user_id, last_post_id);
+    IF NEW.user_id != next_user_id THEN
+      INSERT INTO notifications
+        (user_id, post_id)
+      VALUES
+        (next_user_id, last_post_id);
+    END IF;
 
   END LOOP all_users_loop;
   CLOSE all_users_ids_cursor;
