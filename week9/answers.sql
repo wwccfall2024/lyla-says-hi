@@ -3,6 +3,7 @@ CREATE SCHEMA social;
 USE social;
 
 -- TABLES
+
 CREATE TABLE users (
   user_id INT UNSIGNED PRIMARY KEY NOT NULL AUTO_INCREMENT,
   first_name VARCHAR(30) NOT NULL,
@@ -67,3 +68,74 @@ CREATE TABLE notifications (
     ON UPDATE CASCADE
     ON DELETE CASCADE
 );
+
+CREATE TABLE meta (
+  `key` VARCHAR(30) PRIMARY KEY NOT NULL,
+  value INT UNSIGNED
+);
+
+INSERT INTO meta
+  (`key`, value)
+VALUES
+  ('last_post_id', NULL);
+
+DELIMITER ;;
+
+-- TRIGGERS
+
+-- Trigger to update meta data
+CREATE TRIGGER post_added
+  AFTER INSERT ON posts
+  FOR EACH ROW
+BEGIN
+  UPDATE meta SET value = NEW.post_id WHERE `key` = 'last_post_id';
+END;;
+
+
+-- Creates a notification for all users anytime a user is added
+CREATE TRIGGER user_added
+  AFTER INSERT ON users
+  FOR EACH ROW
+BEGIN
+  DECLARE next_user_id INT UNSIGNED;
+  DECLARE last_post_id INT UNSIGNED;
+  DECLARE row_not_found TINYINT DEFAULT FALSE;
+
+  -- Cursor to grab all user ids
+  DECLARE all_users_ids_cursor CURSOR FOR
+    SELECT user_id
+      FROM users;
+
+  DECLARE CONTINUE HANDLER FOR NOT FOUND
+        SET row_not_found = TRUE;
+
+  -- Creating a post stating a new user has joined
+  INSERT INTO posts
+    (user_id, content)
+  VALUES
+    (NEW.user_id, CONCAT(NEW.first_name, ' ', NEW.last_name, ' just joined!'));
+
+  -- Using the meta data to retrieve the new post's id
+  SELECT value INTO last_post_id
+    FROM meta WHERE `key` = 'last_post_id';
+
+  -- Looping through each user's id and creating a notification for them for
+  -- the new post about a user joining
+  OPEN all_users_ids_cursor;
+  all_users_loop : LOOP
+    
+    FETCH all_users_ids_cursor INTO next_user_id;
+    IF row_not_found THEN
+      LEAVE all_users_loop;
+    END IF;
+
+    INSERT INTO notifications
+      (user_id, post_id)
+    VALUES
+      (next_user_id, last_post_id);
+
+  END LOOP all_users_loop;
+  CLOSE all_users_ids_cursor;
+END;;
+
+DELIMITER ;
