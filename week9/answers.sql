@@ -178,14 +178,17 @@ BEGIN
   DECLARE CONTINUE HANDLER FOR NOT FOUND
         SET row_not_found = TRUE;
 
+  -- Putting passed info into posts table
   INSERT INTO posts
     (user_id, content)
   VALUES
     (user_id_var, content_var);
 
+  -- Using meta data to retrieve new post's id
   SELECT value INTO last_post_id
     FROM meta WHERE `key` = 'last_post_id';
 
+  -- Looping through the user's friends and making notifications for each of them
   OPEN friend_ids_cursor;
   friend_notification_loop : LOOP
 
