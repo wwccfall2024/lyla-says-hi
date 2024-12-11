@@ -138,4 +138,13 @@ BEGIN
   CLOSE all_users_ids_cursor;
 END;;
 
+-- EVENTS
+
+CREATE EVENT disconnect_inactive_sessions
+  ON SCHEDULE EVERY 10 SECOND
+DO
+BEGIN
+  DELETE FROM sessions WHERE updated_on < DATE_SUB(NOW(), INTERVAL 2 HOUR);
+END;;
+
 DELIMITER ;
